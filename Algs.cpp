@@ -4,6 +4,8 @@
 #include <random>
 #include <execution>
 
+#include <fstream>
+
 void Generate(string filename, size_t file_size, int* raw_memory, size_t mem_size)
 {
 	FILE* file;
@@ -21,7 +23,7 @@ void Generate(string filename, size_t file_size, int* raw_memory, size_t mem_siz
 		been_write += num_of_el;
 		for (size_t i = 0; i < num_of_el; ++i)
 		{
-			raw_memory[i] = Generator() % 30;
+			raw_memory[i] = Generator();
 		}
 		fwrite(raw_memory, num_of_el * sizeof(int), 1, file);
 	} while (fit != been_write);
@@ -236,50 +238,55 @@ bool IsSorted(string filename, sort_type* raw_memory, size_t mem_size)
 
 void PreSort(string filename, sort_type* raw_memory, size_t mem_size)
 {
-	FILE* file;
-	fopen_s(&file, filename.c_str(), "rb+");
-	fseek(file, 0, SEEK_SET);
+	std::fstream file(filename, std::ios_base::binary | std::ios_base::in | std::ios_base::out);
 
-	size_t end, old_pos;
+	size_t end =0, old_pos = 0 ,
+		been_read = 0;
 	do
 	{
-		old_pos = ftell(file);
-		end = fread(raw_memory, 1, mem_size, file);
+		old_pos = file.tellg();
+		//printf("presort %zu\n" , old_pos);
+		file.read((char*)raw_memory, mem_size);
+		end = file.gcount();
 		std::sort(std::execution::par_unseq,
 			raw_memory, raw_memory + end / sizeof(sort_type));
-		fseek(file, old_pos, SEEK_SET);
-		//fwrite(raw_memory, 1, mem_size, file);
-		DropFilePatially(file,(char*) raw_memory, mem_size);
-		fflush(file);
-	} while (feof(file));
+		file.seekp(old_pos, std::ios_base::beg);
+		old_pos += end;
+		DropFilePatially(file, (char*)raw_memory, end);
+		file.flush();
+	} while (!file.eof());
 
-	fseek(file, mem_size / 2, SEEK_SET);
+	file.clear();
+
+	file.seekp(mem_size / 2, std::ios_base::beg);
 
 	do
 	{
-		old_pos = ftell(file);
-		end = fread(raw_memory, 1, mem_size, file);
+		old_pos = file.tellg();
+		//printf("presort / 2 %zu\n", old_pos);
+		file.read((char*)raw_memory, mem_size);
+		end = file.gcount();
 		std::sort(std::execution::par_unseq,
 			raw_memory, raw_memory + end / sizeof(sort_type));
-		fseek(file, old_pos, SEEK_SET);
+		file.seekp(old_pos, std::ios_base::beg);
+		old_pos += end;
+		DropFilePatially(file, (char*)raw_memory, end);
+		file.flush();
+	} while (!file.eof());
 
-		DropFilePatially(file, (char*)raw_memory, mem_size);
-		fflush(file);
-	} while (feof(file));
-
-	fclose(file);
+	file.clear();
+	file.close();
 }
 
 
-void DropFilePatially(FILE* file, char* data, size_t size)
+void DropFilePatially(std::fstream& file, char* data, size_t size)
 {
 	size_t num = size / pref_size;
 	for (size_t i = 0; i < num; i++)
 	{
-		fwrite(data, pref_size, 1, file);
-		fflush(file);
+		file.write(data, pref_size);
+		file.flush();
 		data += pref_size;
 	}
-	fwrite(data + pref_size * num, size - pref_size * num, 1, file);
-
+	file.write(data + pref_size * num, size - pref_size * num);
 }

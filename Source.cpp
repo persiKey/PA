@@ -86,7 +86,7 @@ int main()
 		case 'S':
 		case 's':
 		{
-			size_t peffered_mem_avail = mem_avail /*> pref_size ? pref_size : mem_avail*/;
+			size_t peffered_mem_avail = mem_avail > pref_size ? pref_size : mem_avail;
 			{
 				SetPriorityClass(GetCurrentProcess(), REALTIME_PRIORITY_CLASS);
 				Profiler sort("Sorting " + std::to_string(file_size) + " bytes with " + std::to_string(mem_avail) + " bytes memory available");

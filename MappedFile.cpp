@@ -31,7 +31,7 @@ MappedFile::MappedFile(string filename, sort_type* data, size_t size) : _filenam
 	fclose(dummy);
 
 	fopen_s(&raw_file, _filename.c_str(), "rb+");
-	
+	setvbuf(raw_file, NULL, _IONBF, 0);
 
 	filesize = std::filesystem::file_size(_filename);
 
@@ -99,7 +99,7 @@ void MappedFile::Flush()
 	{
 		write_chunk();
 	}
-	fflush(this->raw_file);
+	//fflush(this->raw_file);
 	filesize = std::filesystem::file_size(_filename);;
 	clearerr(raw_file);
 	pos = 0;
@@ -125,7 +125,7 @@ void MappedFile::operator+=(MappedFile& Another)
 		}
 	}
 	clearerr(this->raw_file);
-	fflush(this->raw_file);
+	//fflush(this->raw_file);
 	this->filesize = std::filesystem::file_size(this->_filename);
 	this->pos = 0;
 }

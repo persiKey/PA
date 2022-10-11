@@ -14,4 +14,4 @@ bool IsSorted(string filename, sort_type* raw_memory, size_t mem_size);
 
 void PreSort(string filename, sort_type* raw_memory, size_t mem_size);
 
-void DropFilePatially(FILE* file, char* data, size_t size);
+void DropFilePatially(std::fstream& file, char* data, size_t size);
